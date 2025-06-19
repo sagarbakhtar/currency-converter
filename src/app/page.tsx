@@ -4,36 +4,46 @@ import Select from "@/components/Select";
 import NumberInput from "@/components/NumberInput";
 import InterchangeIcon from "@/components/InterchangeIcon";
 import { useState } from "react";
+import SpinnerIcon from "@/components/SpinnerIcon";
 
 const CurrencyOptions = ["PLN", "EUR", "GBP", "UAH"];
 
 type CurrencyData = {
-  "from": string,
-  "to": string,
-  "rate": number,
-  "fromAmount": number,
-  "toAmount": number
-}
+  from: string;
+  to: string;
+  rate: number;
+  fromAmount: number;
+  toAmount: number;
+};
 export default function Home() {
   const [fromCurrency, setFromCurrency] = useState("EUR");
   const [toCurrency, setToCurrency] = useState("GBP");
   const [fromAmount, setFromAmount] = useState("1.00");
-  const [toAmount, setToAmount] = useState<string>();
-  const [exchangeRate, setExchangeRate] = useState<string>()
+  const [toAmount, setToAmount] = useState<string | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<string>();
+  const [loading, setLoading] = useState(false);
   const [interChange, setInterChange] = useState(true);
 
   const interChangeCurrencies = () => {
     setInterChange((prev) => !prev);
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
+    if (toAmount) {
+      convertCurrency();
+    }
   };
 
   const convertCurrency = async () => {
-    const response = await fetch(`https://my.transfergo.com/api/fx-rates?from=${fromCurrency}&to=${toCurrency}&amount=${fromAmount}`)
+    setLoading(true);
+    const response = await fetch(
+      `https://my.transfergo.com/api/fx-rates?from=${fromCurrency}&to=${toCurrency}&amount=${fromAmount}`
+    );
     const data: CurrencyData = await response.json();
     setExchangeRate(data.rate.toString());
-    setToAmount(data.toAmount.toString())
-  }
+    setFromAmount(data.fromAmount.toString());
+    setToAmount(data.toAmount.toString());
+    setLoading(false);
+  };
 
   const filteredOptions = CurrencyOptions.filter(
     (item) => item !== fromCurrency && item !== toCurrency
@@ -48,7 +58,10 @@ export default function Home() {
                 label="FROM"
                 value={fromCurrency}
                 options={filteredOptions}
-                onChange={(currency) => setFromCurrency(currency)}
+                onChange={(currency) => {
+                  setFromCurrency(currency);
+                  setToAmount(null);
+                }}
               />
 
               <button
@@ -62,7 +75,10 @@ export default function Home() {
                 label="TO"
                 value={toCurrency}
                 options={filteredOptions}
-                onChange={(currency) => setToCurrency(currency)}
+                onChange={(currency) => {
+                  setToCurrency(currency);
+                  setToAmount(null);
+                }}
               />
             </div>
             <div className="flex gap-14">
@@ -73,9 +89,12 @@ export default function Home() {
                 onChange={(value) => setFromAmount(value)}
               />
               {toAmount && (
-                <NumberInput label="TO" value={toAmount}
-                currency={toCurrency}
-                onChange={(value) => setToAmount(value)} />
+                <NumberInput
+                  label="TO"
+                  value={toAmount}
+                  currency={toCurrency}
+                  onChange={(value) => setToAmount(value)}
+                />
               )}
             </div>
           </div>
@@ -83,16 +102,22 @@ export default function Home() {
           <div className="flex flex-col gap-4">
             {!toAmount ? (
               <button
-                className="w-full p-5 bg-green-400 rounded-xs text-white"
+                className={`flex items-center justify-center gap-2 w-full p-5 bg-green-400 rounded-xs text-white ${
+                  loading ? "opacity-50" : ""
+                }`}
                 onClick={() => convertCurrency()}
+                disabled={loading}
               >
+                {loading && <SpinnerIcon />}
                 Convert
               </button>
             ) : (
               <>
                 <div className="flex gap-2 items-center">
                   <span className="rounded-full border-3 border-amber-400 w-3 h-3" />
-                  <p className="text-lg font-medium">1 {fromCurrency} = {exchangeRate} {toCurrency}</p>
+                  <p className="text-lg font-medium">
+                    1 {fromCurrency} = {exchangeRate} {toCurrency}
+                  </p>
                 </div>
                 <p className="text-xs text-gray-400 font-thin">
                   All figures are live mid-market rates, which are for
