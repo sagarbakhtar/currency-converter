@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-
 type NumberInputProps = {
   label: string;
-  value: number;
+  value: string;
+  onChange: (value: string) => void;
   currency: string;
   errorMessage?: string;
 };
@@ -12,10 +11,10 @@ type NumberInputProps = {
 const NumberInput = ({
   label,
   value,
+  onChange,
   currency,
   errorMessage,
 }: NumberInputProps) => {
-  const [number, setNumber] = useState(value.toFixed(2));
   return (
     <div className="flex flex-col gap-3 flex-grow">
       <label className="text-xs font-light text-gray-400">{label}:</label>
@@ -26,8 +25,8 @@ const NumberInput = ({
               size={1}
               className="outline-none flex w-full font-semibold text-2xl"
               type="number"
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
             />
           </div>
           <span className="text-gray-500">{currency}</span>

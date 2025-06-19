@@ -7,10 +7,19 @@ import { useState } from "react";
 
 const CurrencyOptions = ["PLN", "EUR", "GBP", "UAH"];
 
+type CurrencyData = {
+  "from": string,
+  "to": string,
+  "rate": number,
+  "fromAmount": number,
+  "toAmount": number
+}
 export default function Home() {
-  const [showButton, setShowButton] = useState(true);
   const [fromCurrency, setFromCurrency] = useState("EUR");
   const [toCurrency, setToCurrency] = useState("GBP");
+  const [fromAmount, setFromAmount] = useState("1.00");
+  const [toAmount, setToAmount] = useState<string>();
+  const [exchangeRate, setExchangeRate] = useState<string>()
   const [interChange, setInterChange] = useState(true);
 
   const interChangeCurrencies = () => {
@@ -19,13 +28,20 @@ export default function Home() {
     setToCurrency(fromCurrency);
   };
 
+  const convertCurrency = async () => {
+    const response = await fetch(`https://my.transfergo.com/api/fx-rates?from=${fromCurrency}&to=${toCurrency}&amount=${fromAmount}`)
+    const data: CurrencyData = await response.json();
+    setExchangeRate(data.rate.toString());
+    setToAmount(data.toAmount.toString())
+  }
+
   const filteredOptions = CurrencyOptions.filter(
     (item) => item !== fromCurrency && item !== toCurrency
   );
   return (
     <div className="flex min-h-screen justify-center items-center bg-white">
-      <div className="flex gap-20 p-12 shadow-[0_0_10px_2px_rgba(0,0,0,0.25)] max-w-xl">
-        <div className="flex flex-col gap-10">
+      <div className="flex gap-20 p-12 shadow-[0_0_10px_2px_rgba(0,0,0,0.25)] w-xl">
+        <div className="flex flex-grow flex-col gap-10">
           <div className="flex flex-col gap-8">
             <div className="flex gap-6 items-center">
               <Select
@@ -50,16 +66,25 @@ export default function Home() {
               />
             </div>
             <div className="flex gap-14">
-              <NumberInput label="AMOUNT" value={1.0} currency="EUR" />
-              <NumberInput label="AMOUNT" value={1.0} currency="EUR" />
+              <NumberInput
+                label="AMOUNT"
+                value={fromAmount}
+                currency={fromCurrency}
+                onChange={(value) => setFromAmount(value)}
+              />
+              {toAmount && (
+                <NumberInput label="TO" value={toAmount}
+                currency={toCurrency}
+                onChange={(value) => setToAmount(value)} />
+              )}
             </div>
           </div>
 
           <div className="flex flex-col gap-4">
-            {showButton ? (
+            {!toAmount ? (
               <button
                 className="w-full p-5 bg-green-400 rounded-xs text-white"
-                onClick={() => setShowButton(false)}
+                onClick={() => convertCurrency()}
               >
                 Convert
               </button>
@@ -67,7 +92,7 @@ export default function Home() {
               <>
                 <div className="flex gap-2 items-center">
                   <span className="rounded-full border-3 border-amber-400 w-3 h-3" />
-                  <p className="text-lg font-medium">1 EUR = 0.9224 GBP</p>
+                  <p className="text-lg font-medium">1 {fromCurrency} = {exchangeRate} {toCurrency}</p>
                 </div>
                 <p className="text-xs text-gray-400 font-thin">
                   All figures are live mid-market rates, which are for
