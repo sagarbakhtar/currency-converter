@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import Select from "@/components/Select";
 import NumberInput from "@/components/NumberInput";
@@ -9,7 +9,6 @@ import useCurrencyData from "@/hooks/useCurrencyData";
 const CurrencyOptions = ["PLN", "EUR", "GBP", "UAH"];
 
 export default function Home() {
-
   const {
     loading,
     dataFetched,
@@ -19,7 +18,7 @@ export default function Home() {
     setToCurrency,
     setFromAmount,
     setToAmount,
-    interChangeCurrencies
+    interChangeCurrencies,
   } = useCurrencyData({
     defaultFrom: "EUR",
     defaultTo: "GBP",
@@ -44,13 +43,13 @@ export default function Home() {
               />
 
               <div className="pt-5">
-              <button
-                className="w-6 fill-sky-400 cursor-pointer transition-transform active:rotate-180"
-                onClick={interChangeCurrencies}
-              >
-                <InterchangeIcon />
-              </button>
-              </div>              
+                <button
+                  className="w-6 fill-sky-400 cursor-pointer transition-transform active:rotate-180"
+                  onClick={interChangeCurrencies}
+                >
+                  <InterchangeIcon />
+                </button>
+              </div>
 
               <Select
                 label="TO"
@@ -67,7 +66,7 @@ export default function Home() {
                 currency={currencyData.fromCurrency}
                 onChange={(value) => setFromAmount(value)}
               />
-              {currencyData && currencyData.toAmount && (
+              {dataFetched && (
                 <NumberInput
                   label="TO"
                   value={currencyData.toAmount}
@@ -84,7 +83,8 @@ export default function Home() {
                 <div className="flex gap-2 items-center">
                   <span className="rounded-full border-3 border-amber-400 w-3 h-3" />
                   <p className="text-lg font-medium">
-                    1 {currencyData.fromCurrency} = {`${currencyData.rate} ${currencyData.toCurrency}`}
+                    1 {currencyData.fromCurrency} ={" "}
+                    {`${currencyData.rate} ${currencyData.toCurrency}`}
                   </p>
                 </div>
                 <p className="text-xs text-gray-400 font-thin">

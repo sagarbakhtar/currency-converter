@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import useDebounceEffect from "./useDebounceEffect";
 
 type CurrencyData = {
   from: string;
@@ -21,7 +22,7 @@ const useCurrencyData = ({
   const [fromCurrency, setFromCurrency] = useState(defaultFrom);
   const [toCurrency, setToCurrency] = useState(defaultTo);
   const [fromAmount, setFromAmount] = useState(defaultAmount);
-  const [toAmount, setToAmount] = useState<string | null>(null);
+  const [toAmount, setToAmount] = useState<string>("");
   const [rate, setRate] = useState<number | null>(null);
 
   const [currencyDataFetched, setCurrencyDataFetched] = useState(false);
@@ -33,6 +34,7 @@ const useCurrencyData = ({
     setLoading(true);
 
     const amount = calculationBase === "sendAmount" ? fromAmount : toAmount;
+
     try {
       const response = await fetch(
         `https://my.transfergo.com/api/fx-rates?from=${fromCurrency}&to=${toCurrency}&amount=${amount}&calculationBase=${calculationBase}`
@@ -54,33 +56,49 @@ const useCurrencyData = ({
   const interChangeCurrencies = () => {
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
-    if (currencyDataFetched) {
-      convertCurrency();
-    }
   };
+
   const convertCurrency = (calculationBase?: string) => {
     fetchCurrencyData(calculationBase);
   };
+
   const resetCurrencyData = () => {
     setCurrencyDataFetched(false);
     setRate(null);
-    setToAmount(null);
+    setToAmount("");
   };
 
   useEffect(() => {
-    if (
-      currencyDataFetched &&
-      currencyData?.fromAmount.toString() !== fromAmount
-    ) {
-      convertCurrency();
+    if (currencyDataFetched) {
+      fetchCurrencyData();
     }
-  }, [fromAmount]);
+  }, [fromCurrency, toCurrency]);
 
-  useEffect(() => {
-    if (currencyDataFetched && currencyData?.toAmount.toString() !== toAmount) {
-      convertCurrency("receiveAmount");
-    }
-  }, [toAmount]);
+  useDebounceEffect(
+    () => {
+      if (
+        currencyDataFetched &&
+        currencyData?.fromAmount.toString() !== fromAmount
+      ) {
+        convertCurrency();
+      }
+    },
+    [fromAmount],
+    500
+  );
+
+  useDebounceEffect(
+    () => {
+      if (
+        currencyDataFetched &&
+        currencyData?.toAmount.toString() !== toAmount
+      ) {
+        convertCurrency("receiveAmount");
+      }
+    },
+    [toAmount],
+    500
+  );
 
   return {
     loading,
