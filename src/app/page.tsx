@@ -1,52 +1,34 @@
-"use client";
+'use client'
 
 import Select from "@/components/Select";
 import NumberInput from "@/components/NumberInput";
 import InterchangeIcon from "@/components/InterchangeIcon";
-import { useState } from "react";
 import SpinnerIcon from "@/components/SpinnerIcon";
+import useCurrencyData from "@/hooks/useCurrencyData";
 
 const CurrencyOptions = ["PLN", "EUR", "GBP", "UAH"];
 
-type CurrencyData = {
-  from: string;
-  to: string;
-  rate: number;
-  fromAmount: number;
-  toAmount: number;
-};
 export default function Home() {
-  const [fromCurrency, setFromCurrency] = useState("EUR");
-  const [toCurrency, setToCurrency] = useState("GBP");
-  const [fromAmount, setFromAmount] = useState("1.00");
-  const [toAmount, setToAmount] = useState<string | null>(null);
-  const [exchangeRate, setExchangeRate] = useState<string>();
-  const [loading, setLoading] = useState(false);
-  const [interChange, setInterChange] = useState(true);
 
-  const interChangeCurrencies = () => {
-    setInterChange((prev) => !prev);
-    setFromCurrency(toCurrency);
-    setToCurrency(fromCurrency);
-    if (toAmount) {
-      convertCurrency();
-    }
-  };
-
-  const convertCurrency = async () => {
-    setLoading(true);
-    const response = await fetch(
-      `https://my.transfergo.com/api/fx-rates?from=${fromCurrency}&to=${toCurrency}&amount=${fromAmount}`
-    );
-    const data: CurrencyData = await response.json();
-    setExchangeRate(data.rate.toString());
-    setFromAmount(data.fromAmount.toString());
-    setToAmount(data.toAmount.toString());
-    setLoading(false);
-  };
+  const {
+    loading,
+    dataFetched,
+    currencyData,
+    convertCurrency,
+    setFromCurrency,
+    setToCurrency,
+    setFromAmount,
+    setToAmount,
+    interChangeCurrencies
+  } = useCurrencyData({
+    defaultFrom: "EUR",
+    defaultTo: "GBP",
+    defaultAmount: "1.00",
+  });
 
   const filteredOptions = CurrencyOptions.filter(
-    (item) => item !== fromCurrency && item !== toCurrency
+    (item) =>
+      item !== currencyData.fromCurrency && item !== currencyData.toCurrency
   );
   return (
     <div className="flex min-h-screen justify-center items-center bg-white">
@@ -56,43 +38,40 @@ export default function Home() {
             <div className="flex gap-6 items-center">
               <Select
                 label="FROM"
-                value={fromCurrency}
+                value={currencyData.fromCurrency}
                 options={filteredOptions}
-                onChange={(currency) => {
-                  setFromCurrency(currency);
-                  setToAmount(null);
-                }}
+                onChange={(currency) => setFromCurrency(currency)}
               />
 
+              <div className="pt-5">
               <button
-                className="pt-5 w-6 fill-sky-400 cursor-pointer"
+                className="w-6 fill-sky-400 cursor-pointer transition-transform active:rotate-180"
                 onClick={interChangeCurrencies}
               >
-                <InterchangeIcon rotate={interChange} />
+                <InterchangeIcon />
               </button>
+              </div>              
 
               <Select
                 label="TO"
-                value={toCurrency}
+                value={currencyData.toCurrency}
                 options={filteredOptions}
-                onChange={(currency) => {
-                  setToCurrency(currency);
-                  setToAmount(null);
-                }}
+                onChange={(currency) => setToCurrency(currency)}
               />
             </div>
+
             <div className="flex gap-14">
               <NumberInput
                 label="AMOUNT"
-                value={fromAmount}
-                currency={fromCurrency}
+                value={currencyData.fromAmount}
+                currency={currencyData.fromCurrency}
                 onChange={(value) => setFromAmount(value)}
               />
-              {toAmount && (
+              {currencyData && currencyData.toAmount && (
                 <NumberInput
                   label="TO"
-                  value={toAmount}
-                  currency={toCurrency}
+                  value={currencyData.toAmount}
+                  currency={currencyData.toCurrency}
                   onChange={(value) => setToAmount(value)}
                 />
               )}
@@ -100,23 +79,12 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col gap-4">
-            {!toAmount ? (
-              <button
-                className={`flex items-center justify-center gap-2 w-full p-5 bg-green-400 rounded-xs text-white ${
-                  loading ? "opacity-50" : ""
-                }`}
-                onClick={() => convertCurrency()}
-                disabled={loading}
-              >
-                {loading && <SpinnerIcon />}
-                Convert
-              </button>
-            ) : (
+            {dataFetched && currencyData ? (
               <>
                 <div className="flex gap-2 items-center">
                   <span className="rounded-full border-3 border-amber-400 w-3 h-3" />
                   <p className="text-lg font-medium">
-                    1 {fromCurrency} = {exchangeRate} {toCurrency}
+                    1 {currencyData.fromCurrency} = {`${currencyData.rate} ${currencyData.toCurrency}`}
                   </p>
                 </div>
                 <p className="text-xs text-gray-400 font-thin">
@@ -127,6 +95,17 @@ export default function Home() {
                   money option.
                 </p>
               </>
+            ) : (
+              <button
+                className={`flex items-center justify-center gap-2 w-full p-5 bg-green-400 rounded-xs text-white ${
+                  loading ? "opacity-50" : ""
+                }`}
+                onClick={() => convertCurrency()}
+                disabled={loading}
+              >
+                {loading && <SpinnerIcon />}
+                Convert
+              </button>
             )}
           </div>
         </div>
