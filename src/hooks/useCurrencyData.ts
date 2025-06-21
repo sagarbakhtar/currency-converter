@@ -9,6 +9,11 @@ type CurrencyData = {
   toAmount: number;
 };
 
+type ErrorResponse = {
+  error: string
+  message?: string
+}
+
 type UseCurrencyDataProps = {
   defaultFrom: string;
   defaultTo: string;
@@ -19,11 +24,14 @@ const useCurrencyData = ({
   defaultTo,
   defaultAmount,
 }: UseCurrencyDataProps) => {
+
   const [fromCurrency, setFromCurrency] = useState(defaultFrom);
   const [toCurrency, setToCurrency] = useState(defaultTo);
   const [fromAmount, setFromAmount] = useState(defaultAmount);
   const [toAmount, setToAmount] = useState<string>("");
-  const [rate, setRate] = useState<number | null>(null);
+  const [exChangeRate, setExchangeRate] = useState<number | null>(null);
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [currencyDataFetched, setCurrencyDataFetched] = useState(false);
   const [currencyData, setCurrencyData] = useState<CurrencyData>();
@@ -38,16 +46,24 @@ const useCurrencyData = ({
     try {
       const response = await fetch(
         `https://my.transfergo.com/api/fx-rates?from=${fromCurrency}&to=${toCurrency}&amount=${amount}&calculationBase=${calculationBase}`
-      );
-      const data: CurrencyData = await response.json();
+      );      
+                  
+        
       if (response.ok) {
+        const data: CurrencyData = await response.json();
         setCurrencyData(data);
         setFromAmount(data.fromAmount.toString());
         setToAmount(data.toAmount.toString());
-        setRate(data.rate);
+        setExchangeRate(data.rate);
         setCurrencyDataFetched(true);
+        setErrors({})
+      } else {
+        const errResponse: ErrorResponse = await response.json();
+        const errorKey = calculationBase === "sendAmount" ? 'fromAmount' : 'toAmount'
+        setErrors({ [errorKey]: errResponse.message || errResponse.error})
       }
-    } catch {
+    } catch {      
+      setErrors({ apiError: 'Unable to process the request'})
     } finally {
       setLoading(false);
     }
@@ -64,7 +80,7 @@ const useCurrencyData = ({
 
   const resetCurrencyData = () => {
     setCurrencyDataFetched(false);
-    setRate(null);
+    setExchangeRate(null);
     setToAmount("");
   };
 
@@ -108,7 +124,7 @@ const useCurrencyData = ({
       toCurrency,
       fromAmount,
       toAmount,
-      rate,
+      exChangeRate,
     },
     setFromCurrency,
     setToCurrency,
@@ -117,6 +133,7 @@ const useCurrencyData = ({
     convertCurrency,
     resetCurrencyData,
     interChangeCurrencies,
+    errors
   };
 };
 

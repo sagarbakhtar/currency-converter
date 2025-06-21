@@ -19,6 +19,7 @@ export default function Home() {
     setFromAmount,
     setToAmount,
     interChangeCurrencies,
+    errors
   } = useCurrencyData({
     defaultFrom: "EUR",
     defaultTo: "GBP",
@@ -65,6 +66,7 @@ export default function Home() {
                 value={currencyData.fromAmount}
                 currency={currencyData.fromCurrency}
                 onChange={(value) => setFromAmount(value)}
+                errorMessage={errors?.fromAmount}
               />
               {dataFetched && (
                 <NumberInput
@@ -72,6 +74,7 @@ export default function Home() {
                   value={currencyData.toAmount}
                   currency={currencyData.toCurrency}
                   onChange={(value) => setToAmount(value)}
+                  errorMessage={errors?.toAmount}
                 />
               )}
             </div>
@@ -84,7 +87,7 @@ export default function Home() {
                   <span className="rounded-full border-3 border-amber-400 w-3 h-3" />
                   <p className="text-lg font-medium">
                     1 {currencyData.fromCurrency} ={" "}
-                    {`${currencyData.rate} ${currencyData.toCurrency}`}
+                    {`${currencyData.exChangeRate} ${currencyData.toCurrency}`}
                   </p>
                 </div>
                 <p className="text-xs text-gray-400 font-thin">
