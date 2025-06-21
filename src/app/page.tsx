@@ -5,30 +5,56 @@ import NumberInput from "@/components/NumberInput";
 import InterchangeIcon from "@/components/InterchangeIcon";
 import SpinnerIcon from "@/components/SpinnerIcon";
 import useCurrencyData from "@/hooks/useCurrencyData";
+import { useEffect, useState } from "react";
+import useDebounce from "@/hooks/useDebounce";
 
 const CurrencyOptions = ["PLN", "EUR", "GBP", "UAH"];
 
+type CurrencyData = {
+  from: string;
+  to: string;
+  fromAmount: string;
+  toAmount?: string;
+  exChangeRate?: string;
+};
+
 export default function Home() {
-  const {
-    loading,
-    dataFetched,
-    currencyData,
-    convertCurrency,
-    setFromCurrency,
-    setToCurrency,
-    setFromAmount,
-    setToAmount,
-    interChangeCurrencies,
-    errors
-  } = useCurrencyData({
-    defaultFrom: "EUR",
-    defaultTo: "GBP",
-    defaultAmount: "1.00",
+  const [currencyData, setCurrencyData] = useState<CurrencyData>({
+    from: "EUR",
+    to: "GBP",
+    fromAmount: "1.00",
   });
+  const debouncedFromAmount = useDebounce(currencyData.fromAmount, 500);
+  const debouncedTo = useDebounce(currencyData.toAmount, 500);
+
+  const { loading, dataFetched, apiData, errors, convertCurrency } =
+    useCurrencyData({
+      from: currencyData.from,
+      to: currencyData.to,
+      fromAmount: debouncedFromAmount,
+      toAmount: debouncedTo,
+      fetchDataOnLoad: false,
+    });
+
+  const setData = (key: string, value: string) => {
+    setCurrencyData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const interChangeCurrencies = () => {
+    setCurrencyData((prev) => ({ ...prev, from: prev.to, to: prev.from }));
+  };
+
+  useEffect(() => {
+    if (!dataFetched || !apiData) return;
+    setCurrencyData((prev) => ({
+      ...prev,
+      fromAmount: apiData.fromAmount.toString(),
+      toAmount: apiData.toAmount.toString(),
+    }));
+  }, [dataFetched, apiData]);
 
   const filteredOptions = CurrencyOptions.filter(
-    (item) =>
-      item !== currencyData.fromCurrency && item !== currencyData.toCurrency
+    (item) => item !== currencyData.from && item !== currencyData.to
   );
   return (
     <div className="flex min-h-screen justify-center items-center bg-white">
@@ -38,9 +64,9 @@ export default function Home() {
             <div className="flex gap-6 items-center">
               <Select
                 label="FROM"
-                value={currencyData.fromCurrency}
+                value={currencyData.from}
                 options={filteredOptions}
-                onChange={(currency) => setFromCurrency(currency)}
+                onChange={(currency) => setData("from", currency)}
               />
 
               <div className="pt-5">
@@ -54,9 +80,9 @@ export default function Home() {
 
               <Select
                 label="TO"
-                value={currencyData.toCurrency}
+                value={currencyData.to}
                 options={filteredOptions}
-                onChange={(currency) => setToCurrency(currency)}
+                onChange={(currency) => setData("to", currency)}
               />
             </div>
 
@@ -64,16 +90,16 @@ export default function Home() {
               <NumberInput
                 label="AMOUNT"
                 value={currencyData.fromAmount}
-                currency={currencyData.fromCurrency}
-                onChange={(value) => setFromAmount(value)}
+                currency={currencyData.from}
+                onChange={(value) => setData("fromAmount", value)}
                 errorMessage={errors?.fromAmount}
               />
               {dataFetched && (
                 <NumberInput
                   label="TO"
-                  value={currencyData.toAmount}
-                  currency={currencyData.toCurrency}
-                  onChange={(value) => setToAmount(value)}
+                  value={currencyData.toAmount || ""}
+                  currency={currencyData.to}
+                  onChange={(value) => setData("toAmount", value)}
                   errorMessage={errors?.toAmount}
                 />
               )}
@@ -86,8 +112,8 @@ export default function Home() {
                 <div className="flex gap-2 items-center">
                   <span className="rounded-full border-3 border-amber-400 w-3 h-3" />
                   <p className="text-lg font-medium">
-                    1 {currencyData.fromCurrency} ={" "}
-                    {`${currencyData.exChangeRate} ${currencyData.toCurrency}`}
+                    1 {currencyData.from} ={" "}
+                    {`${apiData?.rate} ${currencyData.to}`}
                   </p>
                 </div>
                 <p className="text-xs text-gray-400 font-thin">
