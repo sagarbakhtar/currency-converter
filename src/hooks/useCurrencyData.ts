@@ -1,5 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 
+const CurrencyLimits: Record<string, number> = {
+  PLN: 20000,
+  EUR: 5000,
+  GBP: 1000,
+  UAH: 50000,
+};
+
 type ApiData = {
   from: string;
   to: string;
@@ -20,6 +27,7 @@ type UseCurrencyDataProps = {
   toAmount?: string;
   fetchDataOnLoad?: boolean;
 };
+
 const useCurrencyData = (props: UseCurrencyDataProps) => {
   const { from, to, fromAmount, toAmount, fetchDataOnLoad = true } = props;
 
@@ -30,9 +38,32 @@ const useCurrencyData = (props: UseCurrencyDataProps) => {
 
   const [loading, setLoading] = useState(false);
 
+  const validateLimits = (
+    errorKey: string,
+    currency: string,
+    amount: string
+  ) => {
+    if (
+      !CurrencyLimits[currency] ||
+      CurrencyLimits[currency] >= Number(amount)
+    ) {
+      setErrors({});
+      return true;
+    }
+    setErrors({
+      [errorKey]: `${currency} has limit of ${CurrencyLimits[currency]}`,
+    });
+    return false;
+  };
+
   const fetchCurrencyData = useCallback(
     async (amount: string, calculationBase: string = "sendAmount") => {
       if (!fetchData) return;
+      const errorKey =
+        calculationBase === "sendAmount" ? "fromAmount" : "toAmount";
+      const currencyToCheck = calculationBase === "sendAmount" ? from : to;
+      if (!validateLimits(errorKey, currencyToCheck, amount)) return;
+
       setLoading(true);
 
       try {
@@ -61,14 +92,22 @@ const useCurrencyData = (props: UseCurrencyDataProps) => {
   );
 
   const convertCurrency = () => {
+    if (!validateLimits("fromAmount", from, fromAmount)) return;
     setFetchData(true);
   };
 
+  //Check if props value doesn't match with api data, then call api to get latest values
   useEffect(() => {
-    if (apiData?.fromAmount !== Number(fromAmount)) {
+    if (
+      from !== apiData?.from ||
+      to !== apiData?.to ||
+      apiData?.fromAmount !== Number(fromAmount)
+    ) {
       fetchCurrencyData(fromAmount);
     } else if (toAmount && apiData?.toAmount !== Number(toAmount)) {
       fetchCurrencyData(toAmount, "receiveAmount");
+    } else {
+      setErrors({});
     }
   }, [fetchCurrencyData, fromAmount, toAmount]);
 

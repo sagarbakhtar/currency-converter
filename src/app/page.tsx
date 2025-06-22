@@ -15,24 +15,27 @@ type CurrencyData = {
   to: string;
   fromAmount: string;
   toAmount?: string;
-  exChangeRate?: string;
 };
 
 export default function Home() {
+  //Default currency values and control for inputs
   const [currencyData, setCurrencyData] = useState<CurrencyData>({
     from: "EUR",
     to: "GBP",
     fromAmount: "1.00",
   });
-  const debouncedFromAmount = useDebounce(currencyData.fromAmount, 500);
-  const debouncedTo = useDebounce(currencyData.toAmount, 500);
 
+  //Debounce values to avoid api calls on each input change
+  const debouncedFromAmount = useDebounce(currencyData.fromAmount, 500);
+  const debouncedToAmount = useDebounce(currencyData.toAmount, 500);
+
+  //api hook used for currency conversion
   const { loading, dataFetched, apiData, errors, convertCurrency } =
     useCurrencyData({
       from: currencyData.from,
       to: currencyData.to,
       fromAmount: debouncedFromAmount,
-      toAmount: debouncedTo,
+      toAmount: debouncedToAmount,
       fetchDataOnLoad: false,
     });
 
@@ -44,6 +47,7 @@ export default function Home() {
     setCurrencyData((prev) => ({ ...prev, from: prev.to, to: prev.from }));
   };
 
+  //Update currency controls value based on api data
   useEffect(() => {
     if (!dataFetched || !apiData) return;
     setCurrencyData((prev) => ({
@@ -56,6 +60,7 @@ export default function Home() {
   const filteredOptions = CurrencyOptions.filter(
     (item) => item !== currencyData.from && item !== currencyData.to
   );
+
   return (
     <div className="flex min-h-screen justify-center items-center bg-white">
       <div className="flex gap-20 p-12 shadow-[0_0_10px_2px_rgba(0,0,0,0.25)] w-xl">
@@ -107,21 +112,18 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col gap-4">
-            {dataFetched && currencyData ? (
+            {dataFetched && apiData ? (
               <>
                 <div className="flex gap-2 items-center">
                   <span className="rounded-full border-3 border-amber-400 w-3 h-3" />
                   <p className="text-lg font-medium">
-                    1 {currencyData.from} ={" "}
-                    {`${apiData?.rate} ${currencyData.to}`}
+                    {`1 ${apiData.from} = ${apiData?.rate} ${apiData.to}`}
                   </p>
                 </div>
                 <p className="text-xs text-gray-400 font-thin">
                   All figures are live mid-market rates, which are for
-                  informational purposes only.
-                  <br />
-                  To see the rates for money transfer, please select sending
-                  money option.
+                  informational purposes only. <br /> To see the rates for money
+                  transfer, please select sending money option.
                 </p>
               </>
             ) : (
