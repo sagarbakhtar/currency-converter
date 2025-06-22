@@ -28,7 +28,7 @@ type UseCurrencyDataProps = {
   fetchDataOnLoad?: boolean;
 };
 
-const useCurrencyData = (props: UseCurrencyDataProps) => {
+const useConvertCurrency = (props: UseCurrencyDataProps) => {
   const { from, to, fromAmount, toAmount, fetchDataOnLoad = true } = props;
 
   const [fetchData, setFetchData] = useState(fetchDataOnLoad);
@@ -72,7 +72,7 @@ const useCurrencyData = (props: UseCurrencyDataProps) => {
         );
 
         if (response.ok) {
-          const data: ApiData = await response.json();
+          const data: ApiData = await response.json();          
           setApiData(data);
           setCurrencyDataFetched(true);
           setErrors({});
@@ -120,4 +120,4 @@ const useCurrencyData = (props: UseCurrencyDataProps) => {
   };
 };
 
-export default useCurrencyData;
+export default useConvertCurrency;

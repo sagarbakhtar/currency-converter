@@ -4,7 +4,7 @@ import Select from "@/components/Select";
 import NumberInput from "@/components/NumberInput";
 import InterchangeIcon from "@/components/InterchangeIcon";
 import SpinnerIcon from "@/components/SpinnerIcon";
-import useCurrencyData from "@/hooks/useCurrencyData";
+import useConvertCurrency from "@/hooks/useConvertCurrency";
 import { useEffect, useState } from "react";
 import useDebounce from "@/hooks/useDebounce";
 
@@ -31,7 +31,7 @@ export default function Home() {
 
   //api hook used for currency conversion
   const { loading, dataFetched, apiData, errors, convertCurrency } =
-    useCurrencyData({
+    useConvertCurrency({
       from: currencyData.from,
       to: currencyData.to,
       fromAmount: debouncedFromAmount,
